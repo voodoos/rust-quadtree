@@ -1,3 +1,8 @@
+extern crate sdl2;
+type WinCanvas = sdl2::render::Canvas<sdl2::video::Window>;
+use sdl2::pixels::Color;
+use sdl2::rect::Rect;
+
 use std::collections::LinkedList;
 /// Rectangular bounding box
 /// ```text
@@ -41,6 +46,10 @@ pub trait Collidable {
     fn bounding_box(&self) -> &AABB;
 }
 
+pub trait Drawable {
+    fn draw(&self, canvas: &mut WinCanvas) -> Result<(), String>;
+}
+
 #[derive(Debug)]
 pub struct TestVal {
     pub bbox: AABB,
@@ -49,6 +58,18 @@ pub struct TestVal {
 impl Collidable for TestVal {
     fn bounding_box(&self) -> &AABB {
         return &self.bbox;
+    }
+}
+
+impl Drawable for TestVal {
+    fn draw(&self, canvas: &mut WinCanvas) -> Result<(), String> {
+        let rect = Rect::new(
+            self.bbox.x as i32,
+            self.bbox.y as i32,
+            self.bbox.w as u32,
+            self.bbox.h as u32,
+        );
+        canvas.draw_rect(rect)
     }
 }
 
@@ -237,5 +258,28 @@ impl<T: Collidable> QuadTree<T> {
 impl<T: Collidable> Default for QuadTree<T> {
     fn default() -> Self {
         QuadTree::<T>::new(2, 4, 0, 0, 256, 256)
+    }
+}
+
+impl<T: Collidable + Drawable> Drawable for QuadTree<T> {
+    fn draw(&self, canvas: &mut WinCanvas) -> Result<(), String> {
+        let rect = Rect::new(
+            self.zone.x as i32,
+            self.zone.y as i32,
+            self.zone.w as u32,
+            self.zone.h as u32,
+        );
+        canvas.set_draw_color(Color::RGB(255, 255, 255));
+        canvas.draw_rect(rect)?;
+
+        for v in self.values.iter() {
+            v.draw(canvas)?;
+        }
+
+        for t in self.children.iter() {
+            t.draw(canvas)?;
+        }
+
+        Ok(())
     }
 }

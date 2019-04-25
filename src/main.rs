@@ -6,15 +6,16 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use std::time::Duration;
 
-#[allow(unreachable_code)]
+use lib::Drawable;
+
 fn main() -> Result<(), String> {
     let mut qt = lib::QuadTree::<lib::TestVal>::default();
     qt.insert(lib::TestVal {
         bbox: lib::AABB {
             x: 1,
             y: 1,
-            w: 1,
-            h: 1,
+            w: 10,
+            h: 10,
         },
     });
 
@@ -22,8 +23,8 @@ fn main() -> Result<(), String> {
         bbox: lib::AABB {
             x: 50,
             y: 50,
-            w: 1,
-            h: 1,
+            w: 10,
+            h: 10,
         },
     });
 
@@ -31,13 +32,11 @@ fn main() -> Result<(), String> {
         bbox: lib::AABB {
             x: 150,
             y: 150,
-            w: 1,
-            h: 1,
+            w: 10,
+            h: 10,
         },
     });
     println!("{:#?}", qt);
-
-    panic!("arg");
 
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
@@ -68,7 +67,11 @@ fn main() -> Result<(), String> {
             }
         }
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
-        // The rest of the game loop goes here...
+
+        canvas.set_draw_color(Color::RGB(255, 0, 0));
+        canvas.clear();
+        qt.draw(&mut canvas)?;
+        canvas.present();
     }
     Ok(())
 }
