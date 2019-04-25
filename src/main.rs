@@ -17,6 +17,24 @@ fn main() -> Result<(), String> {
             h: 1,
         },
     });
+
+    qt.insert(lib::TestVal {
+        bbox: lib::AABB {
+            x: 50,
+            y: 50,
+            w: 1,
+            h: 1,
+        },
+    });
+
+    qt.insert(lib::TestVal {
+        bbox: lib::AABB {
+            x: 150,
+            y: 150,
+            w: 1,
+            h: 1,
+        },
+    });
     println!("{:#?}", qt);
 
     panic!("arg");
