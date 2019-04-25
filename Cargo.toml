@@ -1,0 +1,8 @@
+[package]
+name = "rust_quad_trees"
+version = "0.1.0"
+authors = ["vds <thevoodoos@gmail.com>"]
+edition = "2018"
+
+[dependencies.sdl2]
+version = "0.32.2"
