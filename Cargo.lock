@@ -175,7 +175,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust_quad_trees"
+name = "rust_quad_tree"
 version = "0.1.0"
 dependencies = [
  "sdl2 0.32.2 (registry+https://github.com/rust-lang/crates.io-index)",

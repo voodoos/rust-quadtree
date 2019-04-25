@@ -1,5 +1,5 @@
 [package]
-name = "rust_quad_trees"
+name = "rust_quad_tree"
 version = "0.1.0"
 authors = ["vds <thevoodoos@gmail.com>"]
 edition = "2018"

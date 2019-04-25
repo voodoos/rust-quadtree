@@ -94,7 +94,7 @@ impl<T: Collidable> QuadTree<T> {
     }
 
     fn split(&mut self) {
-        if self.children.is_empty() && self.max_depth > 0 {
+        if self.children.is_empty() {
             use Quadrant::*;
             self.children
                 .push_back(QuadTree::<T>::new_child(self, TopLeft));

@@ -7,15 +7,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'hello_cargo'",
+            "name": "Debug executable 'rust_quad_tree'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=hello_cargo",
-                    "--package=hello_cargo"
+                    "--bin=rust_quad_tree",
+                    "--package=rust_quad_tree"
                 ],
                 "filter": {
-                    "name": "hello_cargo",
+                    "name": "rust_quad_tree",
                     "kind": "bin"
                 }
             },
@@ -25,16 +25,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'hello_cargo'",
+            "name": "Debug unit tests in executable 'rust_quad_tree'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=hello_cargo",
-                    "--package=hello_cargo"
+                    "--bin=rust_quad_tree",
+                    "--package=rust_quad_tree"
                 ],
                 "filter": {
-                    "name": "hello_cargo",
+                    "name": "rust_quad_tree",
                     "kind": "bin"
                 }
             },
