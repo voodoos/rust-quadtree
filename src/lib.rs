@@ -12,7 +12,7 @@ use std::collections::LinkedList;
 /// h |
 ///   ˅
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct AABB {
     pub x: i32,
     pub y: i32,
@@ -24,7 +24,7 @@ impl AABB {
     /// Inclusion test
     ///
     /// Tests if this box is inside another one
-    pub fn is_inside(&self, other: &AABB) -> bool {
+    pub fn is_inside(&self, other: AABB) -> bool {
         self.x >= other.x
             && self.x + self.w as i32 <= other.x + other.w as i32
             && self.y >= other.y
@@ -73,6 +73,7 @@ impl Drawable for TestVal {
 }
 
 /// Four quadrants enum
+#[derive(Copy, Clone)]
 enum Quadrant {
     TopLeft,
     TopRight,
@@ -82,10 +83,10 @@ enum Quadrant {
 
 impl Quadrant {
     /// Computes the bounding box of a quadrant
-    pub fn quadrant_bbox(bbox: &AABB, q: &Quadrant) -> (i32, i32, u32, u32) {
+    pub fn quadrant_bbox(bbox: &AABB, q: Quadrant) -> AABB {
         use Quadrant::*;
         let z = &bbox;
-        match q {
+        AABB::from(match q {
             TopLeft => (z.x, z.y, (z.w / 2) + (z.w % 2), (z.h / 2) + (z.h % 2)),
             TopRight => (
                 z.x + (z.w / 2 + 1) as i32,
@@ -105,7 +106,7 @@ impl Quadrant {
                 z.w - (z.w / 2),
                 z.h - (z.h / 2),
             ),
-        }
+        })
     }
 }
 
@@ -157,10 +158,8 @@ impl<T: Collidable> QuadTree<T> {
     fn new_child(&self, q: Quadrant) -> QuadTree<T> {
         let z = &self.zone;
 
-        let (x, y, w, h) = Quadrant::quadrant_bbox(&self.zone, &q);
-
         QuadTree::<T> {
-            zone: AABB { x, y, w, h },
+            zone: Quadrant::quadrant_bbox(&self.zone, q),
             max_depth: self.max_depth - 1,
             max_values: self.max_values,
             children: Vec::<QuadTree<T>>::default(),
@@ -176,34 +175,15 @@ impl<T: Collidable> QuadTree<T> {
     /// Returns `Some(Quadrant)` if it does, `None` otherwise
     fn fits(&self, v: &T) -> Option<Quadrant> {
         use Quadrant::*;
-        if v.bounding_box()
-            .is_inside(&AABB::from(Quadrant::quadrant_bbox(&self.zone, &TopLeft)))
-        {
-            Some(TopLeft)
-        } else if v
-            .bounding_box()
-            .is_inside(&AABB::from(Quadrant::quadrant_bbox(&self.zone, &TopRight)))
-        {
-            Some(TopRight)
-        } else if v
-            .bounding_box()
-            .is_inside(&AABB::from(Quadrant::quadrant_bbox(
-                &self.zone,
-                &BottomLeft,
-            )))
-        {
-            Some(BottomLeft)
-        } else if v
-            .bounding_box()
-            .is_inside(&AABB::from(Quadrant::quadrant_bbox(
-                &self.zone,
-                &BottomRight,
-            )))
-        {
-            Some(BottomRight)
-        } else {
-            None
+
+        for q in vec![TopLeft, TopRight, BottomLeft, BottomRight] {
+            if v.bounding_box()
+                .is_inside(Quadrant::quadrant_bbox(&self.zone, q))
+            {
+                return Some(q);
+            }
         }
+        return None;
     }
 
     /// Correctly insert a new value in a quadtree
@@ -232,21 +212,21 @@ impl<T: Collidable> QuadTree<T> {
         }
     }
 
+    /// Split a leaf in four sub trees
+    ///
+    /// If node is not a leaf nothing happen.
     fn split(&mut self) {
         if self.children.is_empty() && self.max_depth > 0 {
             // Spawning the children
             use Quadrant::*;
-            self.children.push(QuadTree::<T>::new_child(self, TopLeft));
-            self.children.push(QuadTree::<T>::new_child(self, TopRight));
-            self.children
-                .push(QuadTree::<T>::new_child(self, BottomLeft));
-            self.children
-                .push(QuadTree::<T>::new_child(self, BottomRight));
 
-            // This node should not accept more value now that it is splitted
-            //self.max_values = 0; // todo remove
+            for q in vec![TopLeft, TopRight, BottomLeft, BottomRight] {
+                self.children.push(QuadTree::<T>::new_child(self, q));
+            }
 
-            // We dispatch it's actual values
+            // We dispatch its actual values
+            // It is a two step operation to prevent
+            // infinite pop / push behavior
             let mut vals = LinkedList::<T>::default();
 
             while let Some(v) = self.values.pop_back() {
