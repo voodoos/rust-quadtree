@@ -14,10 +14,10 @@ use std::collections::LinkedList;
 /// ```
 #[derive(Debug)]
 pub struct AABB {
-    pub x: usize,
-    pub y: usize,
-    pub w: usize,
-    pub h: usize,
+    pub x: i32,
+    pub y: i32,
+    pub w: u32,
+    pub h: u32,
 }
 
 impl AABB {
@@ -25,20 +25,21 @@ impl AABB {
     ///
     /// Tests if this box is inside another one
     pub fn is_inside(&self, other: &AABB) -> bool {
-        if self.x >= other.x
-            && self.x + self.w <= other.x + other.w
+        self.x >= other.x
+            && self.x + self.w as i32 <= other.x + other.w as i32
             && self.y >= other.y
-            && self.y + self.h <= other.y + other.h
-        {
-            true
-        } else {
-            false
-        }
+            && self.y + self.h as i32 <= other.y + other.h as i32
     }
 
     /// Creates an AABB from a tuple
-    pub fn from_tuple((x, y, w, h): (usize, usize, usize, usize)) -> AABB {
+    pub fn from_tuple((x, y, w, h): (i32, i32, u32, u32)) -> AABB {
         AABB { x, y, w, h }
+    }
+}
+
+impl From<&AABB> for Rect {
+    fn from(bbox: &AABB) -> Self {
+        Rect::new(bbox.x, bbox.y, bbox.w, bbox.h)
     }
 }
 
@@ -63,12 +64,7 @@ impl Collidable for TestVal {
 
 impl Drawable for TestVal {
     fn draw(&self, canvas: &mut WinCanvas) -> Result<(), String> {
-        let rect = Rect::new(
-            self.bbox.x as i32,
-            self.bbox.y as i32,
-            self.bbox.w as u32,
-            self.bbox.h as u32,
-        );
+        let rect = Rect::new(self.bbox.x, self.bbox.y, self.bbox.w, self.bbox.h);
         canvas.draw_rect(rect)
     }
 }
@@ -83,14 +79,29 @@ enum Quadrant {
 
 impl Quadrant {
     /// Computes the bounding box of a quadrant
-    pub fn quadrant_bbox(bbox: &AABB, q: &Quadrant) -> (usize, usize, usize, usize) {
+    pub fn quadrant_bbox(bbox: &AABB, q: &Quadrant) -> (i32, i32, u32, u32) {
         use Quadrant::*;
         let z = &bbox;
         match q {
             TopLeft => (z.x, z.y, (z.w / 2) + (z.w % 2), (z.h / 2) + (z.h % 2)),
-            TopRight => (z.w / 2 + 1, z.y, z.w - (z.w / 2), (z.h / 2) + (z.h % 2)),
-            BottomLeft => (z.x, z.h / 2 + 1, (z.w / 2) + (z.w % 2), z.h - (z.h / 2)),
-            BottomRight => (z.w / 2 + 1, z.h / 2 + 1, z.w - (z.w / 2), z.h - (z.h / 2)),
+            TopRight => (
+                z.x + (z.w / 2 + 1) as i32,
+                z.y,
+                z.w - (z.w / 2),
+                (z.h / 2) + (z.h % 2),
+            ),
+            BottomLeft => (
+                z.x,
+                z.y + (z.h / 2 + 1) as i32,
+                (z.w / 2) + (z.w % 2),
+                z.h - (z.h / 2),
+            ),
+            BottomRight => (
+                z.x + (z.w / 2 + 1) as i32,
+                z.y + (z.h / 2 + 1) as i32,
+                z.w - (z.w / 2),
+                z.h - (z.h / 2),
+            ),
         }
     }
 }
@@ -117,8 +128,8 @@ impl Quadrant {
 #[derive(Debug)]
 pub struct QuadTree<T: Collidable> {
     zone: AABB,
-    max_values: usize,
-    max_depth: usize,
+    max_values: u32,
+    max_depth: u32,
     children: Vec<QuadTree<T>>,
     values: LinkedList<T>,
 }
@@ -126,14 +137,7 @@ pub struct QuadTree<T: Collidable> {
 impl<T: Collidable> QuadTree<T> {
     /// Creates a new QuadTree
     /// with given arguments
-    fn new(
-        max_values: usize,
-        max_depth: usize,
-        x: usize,
-        y: usize,
-        w: usize,
-        h: usize,
-    ) -> QuadTree<T> {
+    fn new(max_values: u32, max_depth: u32, x: i32, y: i32, w: u32, h: u32) -> QuadTree<T> {
         QuadTree {
             max_values,
             max_depth,
@@ -165,7 +169,7 @@ impl<T: Collidable> QuadTree<T> {
         self.children.is_empty()
     }
 
-    /// Checks if a values fits in one of the current node.AABB quadrants
+    /// Checks if a values fits in one of the current node.zone quadrants
     /// Returns `Some(Quadrant)` if it does, `None` otherwise
     fn fits(&self, v: &T) -> Option<Quadrant> {
         use Quadrant::*;
@@ -205,8 +209,10 @@ impl<T: Collidable> QuadTree<T> {
 
     /// Correctly insert a new value in a quadtree
     pub fn insert(&mut self, v: T) {
-        // If the node is full and not at max-depth we try to insert in a subtree:
-        if self.values.len() >= self.max_values && self.max_depth > 0 {
+        // If the node is full and not at max-depth
+        // OR node already has children
+        // we try to insert in a subtree:
+        if !self.is_leaf() || (self.values.len() as u32 >= self.max_values && self.max_depth > 0) {
             use Quadrant::*;
             match self.fits(&v) {
                 // If v doesn't fit any quadrant, it will stay in the parent node
@@ -239,7 +245,7 @@ impl<T: Collidable> QuadTree<T> {
                 .push(QuadTree::<T>::new_child(self, BottomRight));
 
             // This node should not accept more value now that it is splitted
-            self.max_values = 0;
+            //self.max_values = 0; // todo remove
 
             // We dispatch it's actual values
             let mut vals = LinkedList::<T>::default();
@@ -257,18 +263,14 @@ impl<T: Collidable> QuadTree<T> {
 
 impl<T: Collidable> Default for QuadTree<T> {
     fn default() -> Self {
-        QuadTree::<T>::new(2, 4, 0, 0, 256, 256)
+        QuadTree::<T>::new(1, 4, 0, 0, 256, 256)
     }
 }
 
 impl<T: Collidable + Drawable> Drawable for QuadTree<T> {
     fn draw(&self, canvas: &mut WinCanvas) -> Result<(), String> {
-        let rect = Rect::new(
-            self.zone.x as i32,
-            self.zone.y as i32,
-            self.zone.w as u32,
-            self.zone.h as u32,
-        );
+        let rect = Rect::from(&self.zone);
+
         canvas.set_draw_color(Color::RGB(255, 255, 255));
         canvas.draw_rect(rect)?;
 
