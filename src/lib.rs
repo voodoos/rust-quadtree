@@ -108,6 +108,15 @@ impl Quadrant {
             ),
         })
     }
+
+    pub fn all() -> Vec<Quadrant> {
+        vec![
+            Quadrant::TopLeft,
+            Quadrant::TopRight,
+            Quadrant::BottomLeft,
+            Quadrant::BottomRight,
+        ]
+    }
 }
 
 /// A structure representing a quadtree
@@ -174,9 +183,7 @@ impl<T: Collidable> QuadTree<T> {
     /// Checks if a values fits in one of the current node.zone quadrants
     /// Returns `Some(Quadrant)` if it does, `None` otherwise
     fn fits(&self, v: &T) -> Option<Quadrant> {
-        use Quadrant::*;
-
-        for q in vec![TopLeft, TopRight, BottomLeft, BottomRight] {
+        for q in Quadrant::all() {
             if v.bounding_box()
                 .is_inside(Quadrant::quadrant_bbox(&self.zone, q))
             {
@@ -218,9 +225,7 @@ impl<T: Collidable> QuadTree<T> {
     fn split(&mut self) {
         if self.children.is_empty() && self.max_depth > 0 {
             // Spawning the children
-            use Quadrant::*;
-
-            for q in vec![TopLeft, TopRight, BottomLeft, BottomRight] {
+            for q in Quadrant::all() {
                 self.children.push(QuadTree::<T>::new_child(self, q));
             }
 
