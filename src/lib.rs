@@ -30,13 +30,16 @@ impl AABB {
             && self.y >= other.y
             && self.y + self.h as i32 <= other.y + other.h as i32
     }
+}
 
-    /// Creates an AABB from a tuple
-    pub fn from_tuple((x, y, w, h): (i32, i32, u32, u32)) -> AABB {
+/// Creates an AABB from a tuple
+impl From<(i32, i32, u32, u32)> for AABB {
+    fn from((x, y, w, h): (i32, i32, u32, u32)) -> AABB {
         AABB { x, y, w, h }
     }
 }
 
+/// Creates a SDL2 Rect from an AABB
 impl From<&AABB> for Rect {
     fn from(bbox: &AABB) -> Self {
         Rect::new(bbox.x, bbox.y, bbox.w, bbox.h)
@@ -174,21 +177,17 @@ impl<T: Collidable> QuadTree<T> {
     fn fits(&self, v: &T) -> Option<Quadrant> {
         use Quadrant::*;
         if v.bounding_box()
-            .is_inside(&AABB::from_tuple(Quadrant::quadrant_bbox(
-                &self.zone, &TopLeft,
-            )))
+            .is_inside(&AABB::from(Quadrant::quadrant_bbox(&self.zone, &TopLeft)))
         {
             Some(TopLeft)
         } else if v
             .bounding_box()
-            .is_inside(&AABB::from_tuple(Quadrant::quadrant_bbox(
-                &self.zone, &TopRight,
-            )))
+            .is_inside(&AABB::from(Quadrant::quadrant_bbox(&self.zone, &TopRight)))
         {
             Some(TopRight)
         } else if v
             .bounding_box()
-            .is_inside(&AABB::from_tuple(Quadrant::quadrant_bbox(
+            .is_inside(&AABB::from(Quadrant::quadrant_bbox(
                 &self.zone,
                 &BottomLeft,
             )))
@@ -196,7 +195,7 @@ impl<T: Collidable> QuadTree<T> {
             Some(BottomLeft)
         } else if v
             .bounding_box()
-            .is_inside(&AABB::from_tuple(Quadrant::quadrant_bbox(
+            .is_inside(&AABB::from(Quadrant::quadrant_bbox(
                 &self.zone,
                 &BottomRight,
             )))
