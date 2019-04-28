@@ -1,5 +1,7 @@
 extern crate sdl2;
+
 mod lib;
+mod vals;
 
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -10,7 +12,7 @@ use rand::Rng;
 
 use lib::geometry::AABB;
 use lib::traits::{Drawable, Dynamic};
-use lib::vals::TestVal;
+use vals::TestVal;
 
 fn main() -> Result<(), String> {
     let dim = 256;

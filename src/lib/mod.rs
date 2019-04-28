@@ -2,7 +2,6 @@ extern crate sdl2;
 
 pub mod geometry;
 pub mod traits;
-pub mod vals;
 
 use rand::Rng;
 use sdl2::pixels::Color;

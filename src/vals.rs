@@ -1,7 +1,7 @@
 extern crate sdl2;
 
-use super::traits::*;
-use super::AABB;
+use crate::lib::geometry::AABB;
+use crate::lib::traits::*;
 
 use sdl2::rect::Rect;
 use std::time::Duration;
