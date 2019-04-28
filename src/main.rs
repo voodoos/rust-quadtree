@@ -9,6 +9,7 @@ use std::time::Duration;
 use rand::Rng;
 
 use lib::Drawable;
+use lib::Dynamic;
 
 fn main() -> Result<(), String> {
     let dim = 256;
@@ -62,7 +63,7 @@ fn main() -> Result<(), String> {
 
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
 
-    canvas.set_draw_color(Color::RGB(255, 0, 0));
+    canvas.set_draw_color(Color::RGB(0, 0, 0));
     canvas.clear();
     canvas.present();
     let mut event_pump = sdl_context.event_pump()?;
@@ -82,16 +83,17 @@ fn main() -> Result<(), String> {
         }
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 30));
 
-        qt.insert(lib::TestVal {
+        /*qt.insert(lib::TestVal {
             bbox: lib::AABB {
                 x: rng.gen_range(1, dim) as i32,
                 y: rng.gen_range(1, dim) as i32,
                 w: 10,
                 h: 10,
             },
-        });
+        });*/
 
-        canvas.set_draw_color(Color::RGB(255, 0, 0));
+        qt.update(&Duration::new(0, 0));
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
         qt.draw(&mut canvas)?;
         canvas.present();

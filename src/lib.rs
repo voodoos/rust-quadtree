@@ -3,7 +3,10 @@ type WinCanvas = sdl2::render::Canvas<sdl2::video::Window>;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 
+use rand::Rng;
 use std::collections::LinkedList;
+use std::time::Duration;
+
 /// Rectangular bounding box
 /// ```text
 ///   x     w
@@ -21,6 +24,12 @@ pub struct AABB {
 }
 
 impl AABB {
+    /// Translate the box
+    pub fn translate(&mut self, dx: i32, dy: i32) {
+        self.x += dx;
+        self.y += dy;
+    }
+
     /// Inclusion test
     ///
     /// Tests if this box is inside another one
@@ -54,6 +63,15 @@ pub trait Drawable {
     fn draw(&self, canvas: &mut WinCanvas) -> Result<(), String>;
 }
 
+pub trait Dynamic {
+    /// Updates the object according to the time
+    /// elapsed since last update call.
+    ///
+    /// Should return `true` if `self` was mutated.
+    /// More precise info may be needed
+    fn update(&mut self, delta: &Duration) -> bool;
+}
+
 #[derive(Debug)]
 pub struct TestVal {
     pub bbox: AABB,
@@ -69,6 +87,13 @@ impl Drawable for TestVal {
     fn draw(&self, canvas: &mut WinCanvas) -> Result<(), String> {
         let rect = Rect::new(self.bbox.x, self.bbox.y, self.bbox.w, self.bbox.h);
         canvas.draw_rect(rect)
+    }
+}
+
+impl Dynamic for TestVal {
+    fn update(&mut self, _delta: &Duration) -> bool {
+        self.bbox.translate(1, 0);
+        return true;
     }
 }
 
@@ -165,8 +190,6 @@ impl<T: Collidable> QuadTree<T> {
     /// A child has depth - 1 compared to its parent
     /// and is focused on one of the four quadrants
     fn new_child(&self, q: Quadrant) -> QuadTree<T> {
-        let z = &self.zone;
-
         QuadTree::<T> {
             zone: Quadrant::quadrant_bbox(&self.zone, q),
             max_depth: self.max_depth - 1,
@@ -255,7 +278,12 @@ impl<T: Collidable + Drawable> Drawable for QuadTree<T> {
     fn draw(&self, canvas: &mut WinCanvas) -> Result<(), String> {
         let rect = Rect::from(&self.zone);
 
-        canvas.set_draw_color(Color::RGB(255, 255, 255));
+        let mut rng = rand::thread_rng();
+        canvas.set_draw_color(Color::RGB(
+            rng.gen_range(1, 255),
+            rng.gen_range(1, 255),
+            rng.gen_range(1, 255),
+        ));
         canvas.draw_rect(rect)?;
 
         for v in self.values.iter() {
@@ -267,5 +295,21 @@ impl<T: Collidable + Drawable> Drawable for QuadTree<T> {
         }
 
         Ok(())
+    }
+}
+
+impl<T: Collidable + Dynamic> Dynamic for QuadTree<T> {
+    fn update(&mut self, delta: &Duration) -> bool {
+        let mut changed = false;
+
+        for v in self.values.iter_mut() {
+            changed = v.update(delta) || changed;
+        }
+
+        for t in self.children.iter_mut() {
+            changed = t.update(delta) || changed;
+        }
+
+        return changed;
     }
 }
