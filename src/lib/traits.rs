@@ -1,16 +1,12 @@
-extern crate sdl2;
-
 use super::AABB;
 use std::time::Duration;
-
-type WinCanvas = sdl2::render::Canvas<sdl2::video::Window>;
 
 pub trait Collidable {
     fn bounding_box(&self) -> &AABB;
 }
 
-pub trait Drawable {
-    fn draw(&self, canvas: &mut WinCanvas) -> Result<(), String>;
+pub trait Drawable<T> {
+    fn draw(&self, target: &mut T) -> Result<(), String>;
 }
 
 pub trait Dynamic {

@@ -144,7 +144,7 @@ impl<T: Collidable> Default for QuadTree<T> {
     }
 }
 
-impl<T: Collidable + Drawable> Drawable for QuadTree<T> {
+impl<T: Collidable + Drawable<WinCanvas>> Drawable<WinCanvas> for QuadTree<T> {
     fn draw(&self, canvas: &mut WinCanvas) -> Result<(), String> {
         let rect = Rect::from(&self.zone);
 

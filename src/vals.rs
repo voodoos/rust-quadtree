@@ -19,7 +19,7 @@ impl Collidable for TestVal {
     }
 }
 
-impl Drawable for TestVal {
+impl Drawable<WinCanvas> for TestVal {
     fn draw(&self, canvas: &mut WinCanvas) -> Result<(), String> {
         let rect = Rect::new(self.bbox.x, self.bbox.y, self.bbox.w, self.bbox.h);
         canvas.draw_rect(rect)
