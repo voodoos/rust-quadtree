@@ -1,148 +1,19 @@
 extern crate sdl2;
-type WinCanvas = sdl2::render::Canvas<sdl2::video::Window>;
-use sdl2::pixels::Color;
-use sdl2::rect::Rect;
+
+pub mod geometry;
+pub mod traits;
+pub mod vals;
 
 use rand::Rng;
+use sdl2::pixels::Color;
+use sdl2::rect::Rect;
 use std::collections::LinkedList;
 use std::time::Duration;
 
-/// Rectangular bounding box
-/// ```text
-///   x     w
-/// y +⎯⎯⎯⎯⎯⎯˃
-///   |
-/// h |
-///   ˅
-/// ```
-#[derive(Debug, Copy, Clone)]
-pub struct AABB {
-    pub x: i32,
-    pub y: i32,
-    pub w: u32,
-    pub h: u32,
-}
+use geometry::{Quadrant, AABB};
+use traits::*;
 
-impl AABB {
-    /// Translate the box
-    pub fn translate(&mut self, dx: i32, dy: i32) {
-        self.x += dx;
-        self.y += dy;
-    }
-
-    /// Inclusion test
-    ///
-    /// Tests if this box is inside another one
-    pub fn is_inside(&self, other: AABB) -> bool {
-        self.x >= other.x
-            && self.x + self.w as i32 <= other.x + other.w as i32
-            && self.y >= other.y
-            && self.y + self.h as i32 <= other.y + other.h as i32
-    }
-}
-
-/// Creates an AABB from a tuple
-impl From<(i32, i32, u32, u32)> for AABB {
-    fn from((x, y, w, h): (i32, i32, u32, u32)) -> AABB {
-        AABB { x, y, w, h }
-    }
-}
-
-/// Creates a SDL2 Rect from an AABB
-impl From<&AABB> for Rect {
-    fn from(bbox: &AABB) -> Self {
-        Rect::new(bbox.x, bbox.y, bbox.w, bbox.h)
-    }
-}
-
-pub trait Collidable {
-    fn bounding_box(&self) -> &AABB;
-}
-
-pub trait Drawable {
-    fn draw(&self, canvas: &mut WinCanvas) -> Result<(), String>;
-}
-
-pub trait Dynamic {
-    /// Updates the object according to the time
-    /// elapsed since last update call.
-    ///
-    /// Should return `true` if `self` was mutated.
-    /// More precise info may be needed
-    fn update(&mut self, delta: &Duration) -> bool;
-}
-
-#[derive(Debug)]
-pub struct TestVal {
-    pub bbox: AABB,
-}
-
-impl Collidable for TestVal {
-    fn bounding_box(&self) -> &AABB {
-        return &self.bbox;
-    }
-}
-
-impl Drawable for TestVal {
-    fn draw(&self, canvas: &mut WinCanvas) -> Result<(), String> {
-        let rect = Rect::new(self.bbox.x, self.bbox.y, self.bbox.w, self.bbox.h);
-        canvas.draw_rect(rect)
-    }
-}
-
-impl Dynamic for TestVal {
-    fn update(&mut self, _delta: &Duration) -> bool {
-        self.bbox.translate(1, 0);
-        return true;
-    }
-}
-
-/// Four quadrants enum
-#[derive(Copy, Clone)]
-enum Quadrant {
-    TopLeft,
-    TopRight,
-    BottomLeft,
-    BottomRight,
-}
-
-impl Quadrant {
-    /// Computes the bounding box of a quadrant
-    pub fn quadrant_bbox(bbox: &AABB, q: Quadrant) -> AABB {
-        use Quadrant::*;
-        let z = &bbox;
-        AABB::from(match q {
-            TopLeft => (z.x, z.y, (z.w / 2) + (z.w % 2), (z.h / 2) + (z.h % 2)),
-            TopRight => (
-                z.x + (z.w / 2 + 1) as i32,
-                z.y,
-                z.w - (z.w / 2),
-                (z.h / 2) + (z.h % 2),
-            ),
-            BottomLeft => (
-                z.x,
-                z.y + (z.h / 2 + 1) as i32,
-                (z.w / 2) + (z.w % 2),
-                z.h - (z.h / 2),
-            ),
-            BottomRight => (
-                z.x + (z.w / 2 + 1) as i32,
-                z.y + (z.h / 2 + 1) as i32,
-                z.w - (z.w / 2),
-                z.h - (z.h / 2),
-            ),
-        })
-    }
-
-    pub fn all() -> Vec<Quadrant> {
-        vec![
-            Quadrant::TopLeft,
-            Quadrant::TopRight,
-            Quadrant::BottomLeft,
-            Quadrant::BottomRight,
-        ]
-    }
-}
+type WinCanvas = sdl2::render::Canvas<sdl2::video::Window>;
 
 /// A structure representing a quadtree
 ///

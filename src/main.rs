@@ -8,14 +8,15 @@ use std::time::Duration;
 
 use rand::Rng;
 
-use lib::Drawable;
-use lib::Dynamic;
+use lib::geometry::AABB;
+use lib::traits::{Drawable, Dynamic};
+use lib::vals::TestVal;
 
 fn main() -> Result<(), String> {
     let dim = 256;
-    let mut qt = lib::QuadTree::<lib::TestVal>::default();
-    qt.insert(lib::TestVal {
-        bbox: lib::AABB {
+    let mut qt = lib::QuadTree::<TestVal>::default();
+    qt.insert(TestVal {
+        bbox: AABB {
             x: 1,
             y: 1,
             w: 10,
@@ -23,8 +24,8 @@ fn main() -> Result<(), String> {
         },
     });
 
-    qt.insert(lib::TestVal {
-        bbox: lib::AABB {
+    qt.insert(TestVal {
+        bbox: AABB {
             x: 50,
             y: 50,
             w: 10,
@@ -32,8 +33,8 @@ fn main() -> Result<(), String> {
         },
     });
 
-    qt.insert(lib::TestVal {
-        bbox: lib::AABB {
+    qt.insert(TestVal {
+        bbox: AABB {
             x: 150,
             y: 150,
             w: 10,
@@ -41,8 +42,8 @@ fn main() -> Result<(), String> {
         },
     });
 
-    qt.insert(lib::TestVal {
-        bbox: lib::AABB {
+    qt.insert(TestVal {
+        bbox: AABB {
             x: 240,
             y: 240,
             w: 10,
@@ -83,8 +84,8 @@ fn main() -> Result<(), String> {
         }
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 30));
 
-        /*qt.insert(lib::TestVal {
-            bbox: lib::AABB {
+        /*qt.insert(TestVal {
+            bbox: AABB {
                 x: rng.gen_range(1, dim) as i32,
                 y: rng.gen_range(1, dim) as i32,
                 w: 10,
