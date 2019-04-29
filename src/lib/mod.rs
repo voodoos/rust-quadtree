@@ -39,7 +39,7 @@ pub struct QuadTree<T: Collidable> {
     max_values: u32,
     max_depth: u32,
     children: Vec<QuadTree<T>>,
-    values: LinkedList<T>,
+    values: Vec<T>,
 }
 
 impl<T: Collidable> QuadTree<T> {
@@ -51,7 +51,7 @@ impl<T: Collidable> QuadTree<T> {
             max_depth,
             zone: AABB { x, y, w, h },
             children: Vec::default(),
-            values: LinkedList::default(),
+            values: Vec::default(),
         }
     }
 
@@ -65,7 +65,7 @@ impl<T: Collidable> QuadTree<T> {
             max_depth: self.max_depth - 1,
             max_values: self.max_values,
             children: Vec::<QuadTree<T>>::default(),
-            values: LinkedList::<T>::default(),
+            values: Vec::<T>::default(),
         }
     }
 
@@ -95,7 +95,7 @@ impl<T: Collidable> QuadTree<T> {
             use Quadrant::*;
             match self.fits(&v) {
                 // If v doesn't fit any quadrant, it will stay in the parent node
-                None => self.values.push_back(v),
+                None => self.values.push(v),
                 Some(q) => {
                     self.split();
                     match q {
@@ -108,7 +108,7 @@ impl<T: Collidable> QuadTree<T> {
             }
         } else {
             // If the actual not is not full or at max-depth:
-            self.values.push_back(v);
+            self.values.push(v);
         }
     }
 
@@ -127,7 +127,7 @@ impl<T: Collidable> QuadTree<T> {
             // infinite pop / push behavior
             let mut vals = LinkedList::<T>::default();
 
-            while let Some(v) = self.values.pop_back() {
+            while let Some(v) = self.values.pop() {
                 vals.push_back(v);
             }
 
@@ -136,6 +136,13 @@ impl<T: Collidable> QuadTree<T> {
             }
         }
     }
+
+    // fn get_root(&self) -> &QuadTree<T> {
+    //     match self.root {
+    //         None => self,
+    //         Some(r) => r.get_root(),
+    //     }
+    // }
 }
 
 impl<T: Collidable> Default for QuadTree<T> {
@@ -172,12 +179,24 @@ impl<T: Collidable + Dynamic> Dynamic for QuadTree<T> {
     fn update(&mut self, delta: &Duration) -> bool {
         let mut changed = false;
 
-        for v in self.values.iter_mut() {
-            changed = v.update(delta) || changed;
+        for t in &mut self.children {
+            changed = t.update(delta) || changed;
         }
 
-        for t in self.children.iter_mut() {
-            changed = t.update(delta) || changed;
+        let mut moved: LinkedList<usize> = LinkedList::default();
+
+        for (i, v) in self.values.iter_mut().enumerate() {
+            if v.update(delta) {
+                changed = true;
+                if !v.bounding_box().is_inside(self.zone) {
+                    moved.push_back(i);
+                }
+            }
+        }
+
+        for i in moved {
+            let v = self.values.remove(i);
+            //self.get_root().insert(v);
         }
 
         return changed;
